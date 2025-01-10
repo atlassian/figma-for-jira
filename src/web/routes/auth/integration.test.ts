@@ -12,6 +12,7 @@ import {
 } from '../../../domain/entities/testing';
 import { figmaAuthService } from '../../../infrastructure/figma';
 import {
+	generateOAuth2BasicAuthHeader,
 	generateRefreshOAuth2TokenQueryParams,
 	generateRefreshOAuth2TokenResponse,
 } from '../../../infrastructure/figma/figma-client/testing';
@@ -24,18 +25,20 @@ import {
 	mockFigmaMeEndpoint,
 } from '../../testing';
 
-const FIGMA_OAUTH_API_BASE_URL =
-	getConfig().figma.oauth2.authorizationServerBaseUrl;
-const FIGMA_OAUTH_REFRESH_TOKEN_ENDPOINT = '/api/oauth/refresh';
+const FIGMA_OAUTH_API_BASE_URL = getConfig().figma.apiBaseUrl;
+const FIGMA_OAUTH_REFRESH_TOKEN_ENDPOINT = '/v1/oauth/refresh';
 const CHECK_AUTH_ENDPOINT = '/auth/checkAuth';
 
 describe('/auth', () => {
 	describe('/checkAuth', () => {
 		const REFRESH_TOKEN = uuidv4();
 		const REFRESH_TOKEN_QUERY_PARAMS = generateRefreshOAuth2TokenQueryParams({
+			refresh_token: REFRESH_TOKEN,
+		});
+
+		const BASIC_AUTH_HEADER = generateOAuth2BasicAuthHeader({
 			client_id: getConfig().figma.oauth2.clientId,
 			client_secret: getConfig().figma.oauth2.clientSecret,
-			refresh_token: REFRESH_TOKEN,
 		});
 
 		it('should return a response indicating that user is authorized if user is authorized', async () => {
@@ -95,6 +98,8 @@ describe('/auth', () => {
 			nock(FIGMA_OAUTH_API_BASE_URL)
 				.post(FIGMA_OAUTH_REFRESH_TOKEN_ENDPOINT)
 				.query(REFRESH_TOKEN_QUERY_PARAMS)
+				.matchHeader('Content-Type', 'application/x-www-form-urlencoded')
+				.matchHeader('Authorization', BASIC_AUTH_HEADER)
 				.reply(HttpStatusCode.Ok, refreshTokenResponse);
 			mockFigmaMeEndpoint({ baseUrl: getConfig().figma.apiBaseUrl });
 

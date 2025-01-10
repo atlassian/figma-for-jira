@@ -43,6 +43,7 @@ import {
 	generateGetOAuth2TokenQueryParams,
 	generateGetOAuth2TokenResponse,
 	generateGetTeamProjectsResponse,
+	generateOAuth2BasicAuthHeader,
 } from '../../../infrastructure/figma/figma-client/testing';
 import {
 	transformFileToAtlassianDesign,
@@ -67,10 +68,9 @@ import {
 } from '../../testing';
 import { generateFigmaOAuth2State } from '../../testing/figma-jwt-token-mocks';
 
-const FIGMA_OAUTH_API_BASE_URL =
-	getConfig().figma.oauth2.authorizationServerBaseUrl;
+const FIGMA_OAUTH_API_BASE_URL = getConfig().figma.apiBaseUrl;
 const FIGMA_OAUTH_CALLBACK_ENDPOINT = '/figma/oauth/callback';
-const FIGMA_OAUTH_TOKEN_ENDPOINT = '/api/oauth/token';
+const FIGMA_OAUTH_TOKEN_ENDPOINT = '/v1/oauth/token';
 
 const FIGMA_WEBHOOK_EVENT_ENDPOINT = '/figma/webhook';
 
@@ -602,11 +602,14 @@ describe('/figma', () => {
 
 	describe('/oauth/callback', () => {
 		const getTokenQueryParams = generateGetOAuth2TokenQueryParams({
-			client_id: getConfig().figma.oauth2.clientId,
-			client_secret: getConfig().figma.oauth2.clientSecret,
 			redirect_uri: `${
 				getConfig().app.baseUrl
 			}${FIGMA_OAUTH_CALLBACK_ENDPOINT}`,
+		});
+
+		const basicAuthHeader = generateOAuth2BasicAuthHeader({
+			client_id: getConfig().figma.oauth2.clientId,
+			client_secret: getConfig().figma.oauth2.clientSecret,
 		});
 
 		it('should redirect to success page if auth callback to figma succeeds', async () => {
@@ -618,6 +621,8 @@ describe('/figma', () => {
 			nock(FIGMA_OAUTH_API_BASE_URL)
 				.post(FIGMA_OAUTH_TOKEN_ENDPOINT)
 				.query(getTokenQueryParams)
+				.matchHeader('Content-Type', 'application/x-www-form-urlencoded')
+				.matchHeader('Authorization', basicAuthHeader)
 				.reply(HttpStatusCode.Ok, generateGetOAuth2TokenResponse());
 
 			return request(app)

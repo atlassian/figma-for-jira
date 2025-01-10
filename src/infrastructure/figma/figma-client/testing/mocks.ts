@@ -78,28 +78,25 @@ export const generateRefreshOAuth2TokenResponse = ({
 });
 
 export const generateGetOAuth2TokenQueryParams = ({
-	client_id = 'client-id',
-	client_secret = 'client-secret',
 	redirect_uri = 'https://www.example.com/auth/callback',
 	code = 'code-123',
 	grant_type = 'authorization_code',
 } = {}) => ({
-	client_id,
-	client_secret,
 	redirect_uri,
 	code,
 	grant_type,
 });
 
 export const generateRefreshOAuth2TokenQueryParams = ({
-	client_id = 'client-id',
-	client_secret = 'client-secret',
 	refresh_token = 'refresh_token',
 } = {}) => ({
-	client_id,
-	client_secret,
 	refresh_token,
 });
+
+export const generateOAuth2BasicAuthHeader = ({
+	client_id = 'client-id',
+	client_secret = 'client-secret',
+} = {}) => 'Basic ' + btoa(`${client_id}:${client_secret}`);
 
 export const generateGetMeResponse = ({
 	id = uuidv4(),
